@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Smart Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .assistant-container {
+            max-width: 800px;
+            margin: 40px auto;
+            height: 80vh;
+            /* Set a fixed height for chat window */
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 15px 25px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header i {
+            margin-right: 10px;
+        }
+
+        /* Style for the new button inside header */
+        .chat-header .btn-clear {
+            margin-left: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            transition: background 0.2s;
+        }
+
+        .chat-header .btn-clear:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: none;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+
+        .assistant-message {
+            align-self: flex-start;
+            background-color: #f0f2f5;
+            color: var(--dark-color);
+            border-bottom-left-radius: 0;
+            /* Enhance readability for AI output */
+            white-space: pre-wrap;
+            font-size: 0.95em;
+        }
+
+        .chat-input-form {
+            display: flex;
+            padding: 15px 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #fafafa;
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        .send-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--secondary-color);
+        }
+
+        .assistant-message strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <span>Smart Task Manager</span>
+            </div>
+            <div class="user-menu">
+                <span id="username-display">Guest</span>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="assistant-container">
+            <div class="chat-header">
+                <i class="fas fa-robot"></i> Personalized AI Assistant
+                <button id="clear-chat-btn" class="btn btn-clear">
+                    <i class="fas fa-redo"></i> New Session
+                </button>
+            </div>
+
+            <div id="chat-messages" class="chat-messages">
+            </div>
+
+            <form id="chat-form" class="chat-input-form">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Ask about your tasks or planning...">
+                <button type="submit" id="send-btn" class="send-btn">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Token must be retrieved only once
+        const token = localStorage.getItem('access_token');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatForm = document.getElementById('chat-form');
+        const sendBtn = document.getElementById('send-btn');
+        let isLoading = false;
+
+        // Helper function to create auth headers, derived from the token
+        const authHeaders = { 'Authorization': `Bearer ${token}` };
+
+        // CRITICAL FINAL FIX: AXIOS INTERCEPTOR for 401
+        axios.interceptors.response.use(
+            response => response,
+            error => {
+                if (error.response && error.response.status === 401) {
+                    console.error("401 Unauthorized: JWT expired or invalid. Redirecting to login.");
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('username');
+                    window.location.href = '/login';
+                    return Promise.reject(error);
+                }
+                return Promise.reject(error);
+            }
+        );
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            document.getElementById('username-display').textContent = localStorage.getItem('username');
+
+            loadConversationHistory();
+
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('username');
+                window.location.href = '/login';
+            });
+
+            chatForm.addEventListener('submit', handleChatSubmit);
+            document.getElementById('clear-chat-btn').addEventListener('click', clearChatHistory);
+        });
+
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function displayMessage(role, content) {
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ${role}-message`;
+            bubble.textContent = content;
+            chatMessages.appendChild(bubble);
+            scrollToBottom();
+            return bubble;
+        }
+
+        async function loadConversationHistory() {
+            try {
+                const response = await axios.get('/api/assistant/history', {
+                    headers: authHeaders
+                });
+
+                const history = response.data.history;
+                chatMessages.innerHTML = '';
+
+                if (history.length === 0) {
+                    displayMessage('assistant', "Hello! I'm your AI Task Assistant. I have access to your tasks. Ask me what you should focus on today!");
+                    return;
+                }
+
+                history.forEach(msg => {
+                    displayMessage(msg.role, msg.content);
+                });
+
+            } catch (error) {
+                if (error.response && error.response.status !== 401) {
+                    displayMessage('assistant', "Error loading chat history. Please try clearing the session or checking the server logs.");
+                }
+            }
+        }
+
+        async function clearChatHistory() {
+            if (!confirm("Are you sure you want to start a new chat session? This will clear all history in the database.")) {
+                return;
+            }
+
+            try {
+                await axios.post('/api/assistant/clear-history', {}, {
+                    headers: authHeaders
+                });
+
+                chatMessages.innerHTML = '';
+                displayMessage('assistant', "Chat history cleared. Hello! I'm your AI Task Assistant. Ask me what you should focus on today!");
+
+            } catch (error) {
+                alert(`Failed to start new session: Server error. Check server logs.`);
+                console.error('Clear history error:', error);
+            }
+        }
+
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            if (isLoading) return;
+
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            displayMessage('user', userMessage);
+            chatInput.value = '';
+
+            isLoading = true;
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            const loadingBubble = displayMessage('assistant', '...');
+
+            try {
+                const response = await axios.post('/api/assistant/chat', {
+                    message: userMessage
+                }, {
+                    headers: authHeaders
+                });
+
+                const assistantResponse = response.data.assistant_response;
+                loadingBubble.textContent = assistantResponse;
+
+            } catch (error) {
+                if (error.response && error.response.status !== 401) {
+                    const errorMessage = error.response?.data?.error || `Could not connect to AI service. (Status: ${error.response?.status || 'Network Error'})`;
+                    loadingBubble.textContent = `Error: ${errorMessage}`;
+                }
+
+            } finally {
+                isLoading = false;
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+                chatInput.focus();
+            }
+        }
+    </script>
+</body>
+
+</html>

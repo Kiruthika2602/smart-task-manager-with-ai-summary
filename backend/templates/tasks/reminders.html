@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Reminders - Smart Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .reminders-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 30px;
+        }
+
+        .reminders-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .reminders-header h2 {
+            color: var(--dark-color);
+            font-size: 32px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #6c63ff, #4a6bdf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .reminder-card,
+        .task-reminder-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .task-reminder-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .reminder-form-group {
+            margin-bottom: 15px;
+        }
+
+        .reminder-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+
+        .form-control-reminder {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+        }
+
+        .form-row-reminder {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row-reminder .reminder-form-group {
+            flex: 1;
+        }
+
+        /* Task Reminder Specific Styles */
+        .task-reminder-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+        }
+
+        .task-info {
+            flex-grow: 1;
+        }
+
+        .task-info h4 {
+            font-size: 18px;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .task-info p {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .set-reminder-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .set-reminder-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .active-reminders-section h3 {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .active-reminder-item {
+            background: #f7fafc;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reminder-details p {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .reminder-details strong {
+            color: var(--dark-color);
+        }
+
+        .reminder-details small {
+            color: #718096;
+            display: block;
+        }
+
+        .reminder-status-pending {
+            color: #3182ce;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <span>Smart Task Manager</span>
+            </div>
+            <div class="user-menu">
+                <span id="username-display">Guest</span>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="reminders-container">
+            <div class="reminders-header">
+                <h2>Reminder Management Center</h2>
+                <p>Set a custom date/time for general reminders, or select a task below to set a task-specific reminder.
+                </p>
+                <a href="/tasks" class="btn btn-primary btn-small" style="margin-top: 15px;">
+                    <i class="fas fa-arrow-left"></i> Back to Tasks
+                </a>
+            </div>
+
+            <div class="reminder-card">
+                <h3><i class="fas fa-clock"></i> Set General Reminder</h3>
+                <form id="general-reminder-form">
+                    <div class="reminder-form-group">
+                        <label for="general-message">Message</label>
+                        <input type="text" id="general-message" class="form-control-reminder"
+                            placeholder="e.g., Don't forget the meeting!" required>
+                    </div>
+                    <div class="form-row-reminder">
+                        <div class="reminder-form-group">
+                            <label for="general-datetime">Date and Time</label>
+                            <input type="datetime-local" id="general-datetime" class="form-control-reminder" required>
+                        </div>
+                        <div class="reminder-form-group" style="flex-grow: 0;">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn set-reminder-btn" style="width: 150px;">Set
+                                Reminder</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="task-reminder-card">
+                <h3><i class="fas fa-list-check"></i> Reminders for Specific Tasks</h3>
+                <div id="task-reminders-list" class="task-reminder-list">
+                    <div class="empty-state">Loading tasks...</div>
+                </div>
+            </div>
+
+            <div class="active-reminders-section">
+                <h3><i class="fas fa-bell"></i> Active Reminders (Pending)</h3>
+                <div id="active-reminders-list">
+                    <div class="empty-state">No pending reminders.</div>
+                </div>
+            </div>
+
+            <div id="reminder-message" class="message"></div>
+        </div>
+    </div>
+
+    <div id="relative-reminder-modal" class="modal"
+        style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100;">
+        <div class="modal-content"
+            style="background: white; margin: 15% auto; padding: 20px; border-radius: 10px; width: 80%; max-width: 400px; position: relative;">
+            <h4>Set Relative Reminder</h4>
+            <input type="hidden" id="modal-task-id">
+            <div class="reminder-form-group">
+                <label for="relative-hours">Remind me this many hours before the deadline (5 PM)</label>
+                <input type="number" id="relative-hours" class="form-control-reminder" value="24" min="1" required>
+            </div>
+            <div class="reminder-form-group">
+                <label for="relative-message">Custom Message (Optional)</label>
+                <input type="text" id="relative-message" class="form-control-reminder"
+                    placeholder="e.g., Must submit by 5PM!">
+            </div>
+            <button id="submit-relative-reminder" class="btn set-reminder-btn">Set Relative Reminder</button>
+            <button class="btn btn-secondary"
+                onclick="document.getElementById('relative-reminder-modal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const token = localStorage.getItem('access_token');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = localStorage.getItem('username');
+
+            if (token) {
+                document.getElementById('username-display').textContent = username;
+                loadTasksForReminders();
+                loadActiveReminders();
+            } else {
+                window.location.href = '/login';
+            }
+
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('username');
+                window.location.href = '/login';
+            });
+
+            // --- Helper Functions ---
+
+            function showMessage(type, message) {
+                document.getElementById('reminder-message').innerHTML =
+                    `<div class="${type}">${message}</div>`;
+                setTimeout(() => document.getElementById('reminder-message').innerHTML = '', 5000);
+            }
+
+            function formatDate(isoString) {
+                if (!isoString) return 'N/A';
+                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return new Date(isoString).toLocaleDateString(undefined, options);
+            }
+
+            // --- API Call Functions ---
+
+            async function loadTasksForReminders() {
+                const tasksContainer = document.getElementById('task-reminders-list');
+                tasksContainer.innerHTML = '<div class="empty-state">Loading tasks...</div>';
+
+                try {
+                    const response = await axios.get('/api/tasks', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const tasks = response.data.tasks.filter(t => t.status !== 'Completed');
+
+                    if (tasks.length === 0) {
+                        tasksContainer.innerHTML = '<div class="empty-state">No pending tasks found for reminders.</div>';
+                        return;
+                    }
+
+                    tasksContainer.innerHTML = tasks.map(task => `
+                        <div class="task-reminder-item" data-task-id="${task._id}">
+                            <div class="task-info">
+                                <h4>${task.title}</h4>
+                                <p>Due: ${task.due_date || 'No Due Date'} | Priority: ${task.priority}</p>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn set-absolute-reminder-btn" data-task-id="${task._id}" data-task-title="${task.title}">Set Absolute Time</button>
+                                <button class="btn set-relative-reminder-btn" data-task-id="${task._id}" data-task-title="${task.title}" ${!task.due_date ? 'disabled title="Requires Due Date"' : ''}>Set Relative Time</button>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Attach listeners for task-specific buttons
+                    document.querySelectorAll('.set-absolute-reminder-btn').forEach(btn => {
+                        btn.addEventListener('click', openAbsoluteReminder);
+                    });
+                    document.querySelectorAll('.set-relative-reminder-btn').forEach(btn => {
+                        btn.addEventListener('click', openRelativeReminder);
+                    });
+
+                } catch (error) {
+                    tasksContainer.innerHTML = `<div class="error">Failed to load tasks for reminders.</div>`;
+                    console.error('Error loading tasks:', error);
+                }
+            }
+
+            async function loadActiveReminders() {
+                const remindersContainer = document.getElementById('active-reminders-list');
+                remindersContainer.innerHTML = '<div class="empty-state">Loading pending reminders...</div>';
+
+                try {
+                    const response = await axios.get('/api/reminders', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const reminders = response.data.reminders.filter(r => r.status === 'Pending');
+
+                    if (reminders.length === 0) {
+                        remindersContainer.innerHTML = '<div class="empty-state">No pending reminders.</div>';
+                        return;
+                    }
+
+                    remindersContainer.innerHTML = reminders.map(reminder => `
+                        <div class="active-reminder-item">
+                            <div class="reminder-details">
+                                <p><strong>${reminder.message}</strong></p>
+                                <small>Trigger: ${formatDate(reminder.trigger_time)} (${reminder.reminder_type})</small>
+                            </div>
+                            <span class="reminder-status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                        </div>
+                    `).join('');
+
+                } catch (error) {
+                    remindersContainer.innerHTML = `<div class="error">Failed to load active reminders.</div>`;
+                    console.error('Error loading reminders:', error);
+                }
+            }
+
+            // --- Form Handlers ---
+
+            // 1. General Reminder Form Submission
+            document.getElementById('general-reminder-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const dateTime = document.getElementById('general-datetime').value;
+                const message = document.getElementById('general-message').value;
+
+                try {
+                    const response = await axios.post('/api/reminders', {
+                        trigger_value: dateTime,
+                        message: message,
+                        reminder_type: 'Absolute',
+                        task_id: null
+                    }, { headers: { 'Authorization': `Bearer ${token}` } });
+
+                    showMessage('success', response.data.message);
+                    document.getElementById('general-reminder-form').reset();
+                    loadActiveReminders();
+
+                } catch (error) {
+                    const msg = error.response?.data?.error || 'Failed to set reminder.';
+                    showMessage('error', msg);
+                }
+            });
+
+            // 2. Absolute Reminder (Task-Specific - Handled by prompt/modal below)
+            function openAbsoluteReminder(e) {
+                const taskId = e.currentTarget.dataset.taskId;
+                const taskTitle = e.currentTarget.dataset.taskTitle;
+
+                const absTime = prompt(`Set an Absolute Date/Time for task "${taskTitle}" (YYYY-MM-DDTHH:MM):`, new Date().toISOString().slice(0, 16));
+
+                if (absTime) {
+                    const customMessage = prompt('Enter a custom message (optional):', `Reminder for task: ${taskTitle}`);
+                    submitTaskReminder(taskId, absTime, customMessage, 'Absolute');
+                }
+            }
+
+            // 3. Relative Reminder (Task-Specific)
+            function openRelativeReminder(e) {
+                const taskId = e.currentTarget.dataset.taskId;
+                const taskTitle = e.currentTarget.dataset.taskTitle;
+
+                // Using a simple prompt for now to avoid building a complex modal under time constraints
+                const hoursBefore = prompt(`Set relative reminder for task "${taskTitle}". How many hours before the deadline?`, '24');
+
+                if (hoursBefore && !isNaN(parseInt(hoursBefore))) {
+                    const customMessage = prompt('Enter a custom message (optional):', `${hoursBefore} hours before ${taskTitle} deadline.`);
+                    submitTaskReminder(taskId, hoursBefore, customMessage, 'Relative_Hours_Before');
+                }
+            }
+
+            async function submitTaskReminder(taskId, triggerValue, message, reminderType) {
+                try {
+                    const response = await axios.post('/api/reminders', {
+                        task_id: taskId,
+                        trigger_value: triggerValue,
+                        message: message,
+                        reminder_type: reminderType
+                    }, { headers: { 'Authorization': `Bearer ${token}` } });
+
+                    showMessage('success', response.data.message);
+                    loadActiveReminders();
+
+                } catch (error) {
+                    const msg = error.response?.data?.error || 'Failed to set task reminder.';
+                    showMessage('error', msg);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

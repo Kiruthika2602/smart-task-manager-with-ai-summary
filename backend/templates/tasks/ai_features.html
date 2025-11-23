@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Features - Smart Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .ai-features-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 30px;
+        }
+
+        .ai-features-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .ai-features-header h2 {
+            color: var(--dark-color);
+            font-size: 36px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .ai-features-header p {
+            font-size: 18px;
+            color: #4a5568;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .ai-features-grid {
+            display: grid;
+            /* Allow flexible columns, min width 350px */
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .ai-feature-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            /* Ensures all cards in a row have equal height */
+        }
+
+        .ai-feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-feature-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .ai-feature-icon i {
+            font-size: 30px;
+            color: white;
+        }
+
+        .ai-feature-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 15px;
+        }
+
+        .ai-feature-description {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            flex-grow: 1;
+            /* Allows description to take available space, pushing button to bottom */
+        }
+
+        .ai-feature-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .ai-feature-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(74, 107, 223, 0.2);
+        }
+
+        .ai-feature-btn.coming-soon {
+            background: #e2e8f0;
+            color: #718096;
+            cursor: not-allowed;
+        }
+
+        .ai-feature-btn.coming-soon:hover {
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <span>Smart Task Manager</span>
+            </div>
+            <div class="user-menu">
+                <span id="username-display">Guest</span>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="ai-features-container">
+            <div class="ai-features-header">
+                <h2>AI-Powered Features</h2>
+                <p>Leverage the power of artificial intelligence to enhance your productivity and task management
+                    experience</p>
+            </div>
+
+            <div class="ai-features-grid">
+                <div class="ai-feature-card">
+                    <div class="ai-feature-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h3 class="ai-feature-title">Intelligent Task Summarization</h3>
+                    <p class="ai-feature-description">Automatically generate concise summaries of lengthy task
+                        descriptions, making it easier to quickly understand your tasks at a glance.</p>
+                    <a href="/tasks/summarization" class="ai-feature-btn">Try Detailed Summaries</a>
+                </div>
+
+                <div class="ai-feature-card">
+                    <div class="ai-feature-icon">
+                        <i class="fas fa-list-ul"></i>
+                    </div>
+                    <h3 class="ai-feature-title">Smart Subtask Generation</h3>
+                    <p class="ai-feature-description">Break down complex tasks into logical subtasks automatically,
+                        helping you tackle large projects more systematically.</p>
+                    <a href="/tasks/subtask-generation" class="ai-feature-btn">Try Now (Sandbox)</a>
+                </div>
+
+                <div class="ai-feature-card">
+                    <div class="ai-feature-icon">
+                        <i class="fas fa-sort-amount-down"></i>
+                    </div>
+                    <h3 class="ai-feature-title">Intelligent Task Prioritization</h3>
+                    <p class="ai-feature-description">Let AI analyze your tasks and suggest optimal prioritization based
+                        on deadlines, importance, and your work patterns.</p>
+                    <a href="/tasks/prioritization" class="ai-feature-btn">Start Analysis</a>
+                </div>
+
+                <div class="ai-feature-card">
+                    <div class="ai-feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="ai-feature-title">Context-Aware Reminders</h3>
+                    <p class="ai-feature-description">Receive intelligent reminders based on your context, such as
+                        location or time-sensitive triggers.</p>
+                    <a href="/reminders" class="ai-feature-btn">Set Reminders Now</a>
+                </div>
+
+                <div class="ai-feature-card">
+                    <div class="ai-feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="ai-feature-title">Productivity Analytics Dashboard</h3>
+                    <p class="ai-feature-description">Visualize your productivity trends, task completion rates, and
+                        time allocation across different categories.</p>
+                    <a href="/analytics" class="ai-feature-btn">View Dashboard</a>
+                </div>
+
+                <div class="ai-feature-card">
+                    <div class="ai-feature-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 class="ai-feature-title">Personalized AI Assistant</h3>
+                    <p class="ai-feature-description">Chat with an AI assistant that can answer questions about your
+                        tasks and help you plan your day.</p>
+                    <a href="/assistant" class="ai-feature-btn">Start Chatting</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if user is logged in
+            const token = localStorage.getItem('access_token');
+            const username = localStorage.getItem('username');
+
+            if (token) {
+                document.getElementById('username-display').textContent = username;
+            } else {
+                // Redirect to login if not authenticated
+                window.location.href = '/login';
+            }
+
+            // Logout functionality
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('username');
+                window.location.href = '/login';
+            });
+        });
+    </script>
+</body>
+
+</html>

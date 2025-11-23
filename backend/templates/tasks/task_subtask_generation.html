@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtask Generation - Smart Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Reusing most styles from task_summarization.html */
+        .subtask-generation-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px;
+        }
+
+        .subtask-generation-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .subtask-generation-header h2 {
+            color: var(--dark-color);
+            font-size: 32px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtask-generation-header p {
+            font-size: 18px;
+            color: #4a5568;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .subtask-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: var(--dark-color);
+            font-size: 16px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .task-selector select {
+            min-height: auto;
+            padding: 12px 15px;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 107, 223, 0.1);
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(74, 107, 223, 0.2);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-box {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            display: none;
+            /* 💡 IMPORTANT: Add markdown support style */
+            white-space: pre-wrap;
+        }
+
+        .result-box h3 {
+            color: var(--dark-color);
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-box h3 i {
+            color: var(--primary-color);
+        }
+
+        /* Styling for the markdown output */
+        .subtask-markdown {
+            padding: 10px 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Basic styles to make markdown look nice */
+        .subtask-markdown ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .subtask-markdown strong {
+            font-weight: 700;
+        }
+
+
+        .ai-loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--primary-color);
+        }
+
+        .ai-loading i {
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .task-selector {
+            margin-bottom: 25px;
+        }
+
+        .task-selector select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            background: white;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .error {
+            background: #fff5f5;
+            color: var(--error-color);
+            border: 1px solid #feb2b2;
+        }
+
+        .success {
+            background: #f0fff4;
+            color: var(--success-color);
+            border: 1px solid #9ae6b4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <span>Smart Task Manager</span>
+            </div>
+            <div class="user-menu">
+                <span id="username-display">Guest</span>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="subtask-generation-container">
+            <div class="subtask-generation-header">
+                <h2>Smart Subtask Generation</h2>
+                <p>Break down large tasks into actionable, logical subtasks using AI.</p>
+                <a href="/ai-features" class="btn btn-primary btn-small" style="margin-top: 15px;">
+                    <i class="fas fa-arrow-left"></i> Back to AI Features
+                </a>
+            </div>
+
+            <div class="subtask-card">
+                <div class="task-selector">
+                    <label for="task-select">Select an Existing Task (Optional)</label>
+                    <select id="task-select" class="form-control">
+                        <option value="">-- Enter a new task description below --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="task-description">Task Description</label>
+                    <textarea id="task-description" class="form-control"
+                        placeholder="Enter a detailed task description to break down..."></textarea>
+                </div>
+
+                <button id="generate-subtasks-btn" class="btn-generate">
+                    <i class="fas fa-list-ul"></i> Generate Subtasks
+                </button>
+
+                <div class="ai-loading" id="ai-loading">
+                    <i class="fas fa-spinner"></i> Generating subtasks...
+                </div>
+
+                <div class="result-box" id="subtasks-result">
+                    <h3><i class="fas fa-sitemap"></i> Generated Subtasks (Markdown)</h3>
+                    <p>These subtasks were generated for the description above. They are **NOT** automatically saved.
+                        Use this output to manually add subtasks to a task on the main Task List.</p>
+                    <div class="subtask-markdown" id="subtask-markdown-output">
+                    </div>
+                </div>
+
+                <div id="subtask-message" class="message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            const username = localStorage.getItem('username');
+
+            if (token) {
+                document.getElementById('username-display').textContent = username;
+                loadTasks();
+            } else {
+                window.location.href = '/login';
+            }
+
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('username');
+                window.location.href = '/login';
+            });
+
+            // Load tasks for the dropdown
+            async function loadTasks() {
+                try {
+                    const response = await axios.get('/api/tasks', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const tasks = response.data.tasks;
+                    const taskSelect = document.getElementById('task-select');
+
+                    while (taskSelect.options.length > 1) {
+                        taskSelect.remove(1);
+                    }
+
+                    tasks.forEach(task => {
+                        const option = document.createElement('option');
+                        option.value = task._id;
+                        option.textContent = task.title;
+                        option.dataset.description = task.description;
+                        taskSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading tasks:', error);
+                    document.getElementById('subtask-message').innerHTML =
+                        `<div class="error">Failed to load tasks: ${error.response?.data?.error || error.message}</div>`;
+                }
+            }
+
+            // Handle task selection: populate textarea
+            document.getElementById('task-select').addEventListener('change', (e) => {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                const description = selectedOption.dataset.description || '';
+                document.getElementById('task-description').value = description;
+            });
+
+            // Generate subtasks
+            document.getElementById('generate-subtasks-btn').addEventListener('click', async () => {
+                const description = document.getElementById('task-description').value.trim();
+
+                if (!description) {
+                    document.getElementById('subtask-message').innerHTML =
+                        `<div class="error">Please enter a task description</div>`;
+                    return;
+                }
+
+                // Show loading
+                document.getElementById('ai-loading').style.display = 'block';
+                document.getElementById('generate-subtasks-btn').disabled = true;
+                document.getElementById('subtasks-result').style.display = 'none';
+                document.getElementById('subtask-message').innerHTML = '';
+
+                try {
+                    // Call the dedicated sandbox route: /api/ai/generate-subtasks-only
+                    const response = await axios.post('/api/ai/generate-subtasks-only', {
+                        description: description
+                    }, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    // 💡 FIX: The backend now returns 'markdown_output'
+                    const markdownOutput = response.data.markdown_output;
+
+                    document.getElementById('subtask-message').innerHTML =
+                        `<div class="success">${response.data.message} Displayed below.</div>`;
+
+                    const subtaskOutputContainer = document.getElementById('subtask-markdown-output');
+
+                    // Simple replacement of markdown bullets/newlines for display
+                    // The 'white-space: pre-wrap' style helps maintain formatting.
+                    let formattedOutput = markdownOutput.replace(/\*/g, '•');
+
+                    subtaskOutputContainer.innerHTML = formattedOutput;
+
+                    document.getElementById('subtasks-result').style.display = 'block';
+
+                } catch (error) {
+                    const message = error.response?.data?.error || 'Failed to generate subtasks.';
+                    document.getElementById('subtask-message').innerHTML =
+                        `<div class="error">${message}</div>`;
+                } finally {
+                    document.getElementById('ai-loading').style.display = 'none';
+                    document.getElementById('generate-subtasks-btn').disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .btn-ai {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-ai:hover {
+            background: linear-gradient(135deg, #3a5bd9, #5a4fcf);
+        }
+
+        .btn-alert {
+            background: #e53e3e;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-alert:hover {
+            background: #c53030;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <span>Smart Task Manager</span>
+            </div>
+            <div class="user-menu">
+                <span id="username-display">Guest</span>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="hero-section">
+                <h1>SMART TASK MANAGER WITH AI SUMMARIES</h1>
+                <div class="hero-description">
+                    <p>Welcome to the future of task management! Our Smart Task Manager helps you organize your work
+                        efficiently with the power of AI.</p>
+                    <p>Create tasks, set priorities, and let AI generate summaries and subtasks to boost your
+                        productivity.</p>
+                    <div class="features">
+                        <div class="feature">
+                            <i class="fas fa-robot"></i>
+                            <h3>AI Summaries</h3>
+                            <p>Get concise summaries of your tasks with AI</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-list-ul"></i>
+                            <h3>Subtask Generation</h3>
+                            <p>Automatically generate subtasks for complex projects</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-chart-pie"></i>
+                            <h3>Analytics Dashboard</h3>
+                            <p>Visualize your productivity with insightful charts</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="cta-buttons">
+                    <a href="/tasks" class="btn btn-primary">View My Tasks</a>
+                    <a href="/tasks/new" class="btn btn-secondary">Create New Task</a>
+                    <a href="/ai-features" class="btn btn-ai">
+                        <i class="fas fa-magic"></i> AI Features
+                    </a>
+                    <a href="/tasks/alerts" class="btn btn-alert">
+                        <i class="fas fa-bell"></i> Alerts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Check if user is logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            const username = localStorage.getItem('username');
+
+            if (token) {
+                document.getElementById('username-display').textContent = username;
+            } else {
+                // Redirect to login if not authenticated
+                window.location.href = '/login';
+            }
+
+            // Logout functionality
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('username');
+                window.location.href = '/login';
+            });
+        });
+    </script>
+</body>
+
+</html>

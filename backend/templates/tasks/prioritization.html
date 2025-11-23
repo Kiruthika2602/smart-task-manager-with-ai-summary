@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Prioritization - Smart Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .prioritization-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 30px;
+        }
+
+        .prioritization-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .prioritization-header h2 {
+            color: var(--dark-color);
+            font-size: 32px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .prioritization-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .task-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .task-summary-table th,
+        .task-summary-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        .task-summary-table th {
+            background-color: #f7fafc;
+            font-weight: 600;
+            color: var(--dark-color);
+            text-transform: uppercase;
+        }
+
+        .task-summary-table tr:hover {
+            background-color: #fcfcfc;
+        }
+
+        .task-summary-table td.priority-high {
+            color: #e53e3e;
+            font-weight: 500;
+        }
+
+        .task-summary-table td.priority-medium {
+            color: #dd6b20;
+            font-weight: 500;
+        }
+
+        .task-summary-table td.priority-low {
+            color: #38a169;
+            font-weight: 500;
+        }
+
+        .ranking-result {
+            margin-top: 30px;
+        }
+
+        .ranking-result h3 {
+            color: var(--dark-color);
+            font-size: 24px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+        }
+
+        /* 💡 IMPORTANT: Override .ranking-markdown-box for parsed HTML tables */
+        .ranking-markdown-box {
+            /* Remove pre-wrap, monospace, etc., as markdown will be rendered as HTML */
+            /* We will let the .task-summary-table and .ranking-table classes style the content */
+            padding: 0;
+            /* Reset padding here, table cells will have their own */
+            border: none;
+            /* Remove outer border, table will have its own */
+            background: none;
+            /* Remove background, table will have its own */
+            font-family: inherit;
+            /* Use global font */
+        }
+
+        /* Apply ranking table styles to the *parsed* markdown table */
+        .ranking-markdown-box table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 2px solid var(--primary-color);
+            /* Added border to match .ranking-table */
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            /* For rounded corners */
+        }
+
+        .ranking-markdown-box th,
+        .ranking-markdown-box td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        .ranking-markdown-box th {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .ranking-markdown-box tr:last-child td {
+            border-bottom: none;
+            /* No border for the last row */
+        }
+
+        .ranking-markdown-box tr:hover {
+            background-color: #fcfcfc;
+        }
+
+        .ranking-score {
+            font-weight: 700;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .ai-justification {
+            font-style: italic;
+            color: #4a5568;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <span>Smart Task Manager</span>
+            </div>
+            <div class="user-menu">
+                <span id="username-display">Guest</span>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="prioritization-container">
+            <div class="prioritization-header">
+                <h2>Intelligent Task Prioritization</h2>
+                <p>Submit your current task list to AI to receive an objective ranking based on urgency, importance, and
+                    scope.</p>
+            </div>
+
+            <div class="prioritization-card">
+                <h3><i class="fas fa-list-ul"></i> Your Current Tasks (Pending)</h3>
+
+                <table class="task-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Due Date</th>
+                            <th>Priority (User)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="task-data-summary">
+                    </tbody>
+                </table>
+
+                <div id="loading-tasks" class="ai-loading" style="display: block;">
+                    <i class="fas fa-spinner"></i> Loading your tasks...
+                </div>
+
+                <div id="no-tasks-message" class="message" style="display: none;"></div>
+
+                <button id="prioritize-btn" class="btn-generate" style="margin-top: 20px;" disabled>
+                    <i class="fas fa-sort-amount-down"></i> Analyze & Prioritize
+                </button>
+            </div>
+
+            <div id="ranking-section" class="ranking-result" style="display: none;">
+                <h3><i class="fas fa-robot"></i> AI Recommended Priority Order</h3>
+
+                <div id="ranking-markdown-output" class="ranking-markdown-box">
+                </div>
+            </div>
+
+            <div id="prioritization-message" class="message"></div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/lib/marked.umd.min.js"></script>
+    <script>
+        const token = localStorage.getItem('access_token');
+        let allPendingTasks = []; // Global store for tasks passed to AI
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = localStorage.getItem('username');
+            if (token) {
+                document.getElementById('username-display').textContent = username;
+                loadTasksForPrioritization();
+            } else {
+                window.location.href = '/login';
+            }
+
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('username');
+                window.location.href = '/login';
+            });
+
+            // --- Helper Functions ---
+            function showMessage(type, message) {
+                document.getElementById('prioritization-message').innerHTML =
+                    `<div class="${type}">${message}</div>`;
+                setTimeout(() => document.getElementById('prioritization-message').innerHTML = '', 5000);
+            }
+
+            function formatDate(isoString) {
+                if (!isoString) return 'N/A';
+                return new Date(isoString).toLocaleDateString();
+            }
+
+            // --- Core Logic ---
+
+            async function loadTasksForPrioritization() {
+                const loadingElement = document.getElementById('loading-tasks');
+                const tableBody = document.getElementById('task-data-summary');
+                const prioritizeBtn = document.getElementById('prioritize-btn');
+
+                loadingElement.style.display = 'block';
+                tableBody.innerHTML = '';
+                prioritizeBtn.disabled = true;
+                document.getElementById('no-tasks-message').style.display = 'none';
+
+                try {
+                    const response = await axios.get('/api/tasks', { headers: { 'Authorization': `Bearer ${token}` } });
+
+                    // Filter down to only Pending/In Progress tasks for relevance
+                    allPendingTasks = response.data.tasks.filter(t => t.status !== 'Completed').map(task => ({
+                        id: task._id,
+                        title: task.title,
+                        description: task.description,
+                        priority: task.priority,
+                        due_date: task.due_date || 'N/A', // AI needs these fields
+                        status: task.status
+                    }));
+
+                    loadingElement.style.display = 'none';
+
+                    if (allPendingTasks.length === 0) {
+                        document.getElementById('no-tasks-message').innerHTML =
+                            '<div class="error">No pending tasks found to prioritize. Create some tasks first!</div>';
+                        document.getElementById('no-tasks-message').style.display = 'block';
+                        return;
+                    }
+
+                    // Render tasks overview table
+                    tableBody.innerHTML = allPendingTasks.map(task => `
+                        <tr>
+                            <td>${task.title}</td>
+                            <td>${formatDate(task.due_date)}</td>
+                            <td class="priority-${task.priority.toLowerCase()}">${task.priority}</td>
+                            <td>${task.status}</td>
+                        </tr>
+                    `).join('');
+
+                    prioritizeBtn.disabled = false;
+
+                } catch (error) {
+                    loadingElement.style.display = 'none';
+                    showMessage('error', 'Failed to load tasks for analysis.');
+                    console.error('Error loading tasks:', error);
+                }
+            }
+
+            document.getElementById('prioritize-btn').addEventListener('click', async () => {
+                if (allPendingTasks.length === 0) {
+                    showMessage('error', 'No tasks available to prioritize.');
+                    return;
+                }
+
+                const prioritizeBtn = document.getElementById('prioritize-btn');
+                const rankingOutputDiv = document.getElementById('ranking-markdown-output');
+                const rankingSection = document.getElementById('ranking-section');
+
+                // Set Loading State
+                prioritizeBtn.disabled = true;
+                prioritizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+                rankingSection.style.display = 'none';
+                showMessage('', '');
+                rankingOutputDiv.innerHTML = '<div class="ai-loading" style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Generating AI ranking...</div>'; // Better loading indicator
+
+                try {
+                    const response = await axios.post('/api/ai/prioritize', {
+                        tasks: allPendingTasks
+                    }, { headers: { 'Authorization': `Bearer ${token}` } });
+
+                    const markdownOutput = response.data.ranking_markdown;
+
+                    // 💡 CRITICAL FIX: Parse Markdown to HTML
+                    // Ensure 'marked' is globally available from the CDN
+                    const htmlOutput = marked.parse(markdownOutput);
+
+                    rankingOutputDiv.innerHTML = htmlOutput; // Inject the parsed HTML
+
+                    // 💡 POST-PROCESSING: Apply additional styling to the generated table if needed
+                    // (The CSS above should already handle this for tables within .ranking-markdown-box)
+
+                    rankingSection.style.display = 'block';
+                    showMessage('success', response.data.message);
+
+                } catch (error) {
+                    const message = error.response?.data?.error || 'Failed to analyze tasks. Check AI service and try again.';
+                    showMessage('error', message);
+
+                    // Display the error text in the output box
+                    rankingOutputDiv.innerHTML = `<div class="error" style="text-align: center;">Error during analysis: ${message}</div>`;
+                    rankingSection.style.display = 'block';
+
+                    console.error('Prioritization Error:', error);
+
+                } finally {
+                    // Reset Button
+                    prioritizeBtn.disabled = false;
+                    prioritizeBtn.innerHTML = '<i class="fas fa-sort-amount-down"></i> Analyze & Prioritize';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
